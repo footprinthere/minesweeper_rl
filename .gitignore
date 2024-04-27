@@ -1,7 +1,8 @@
 .idea
+.vscode
 
 __pycache__
-.ipynb
+*.ipynb
 
 # Shell script
 *.sh
