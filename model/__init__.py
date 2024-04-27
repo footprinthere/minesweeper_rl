@@ -1,1 +1,1 @@
-from cnn import MineSweeperCNN
+from .cnn import MineSweeperCNN
