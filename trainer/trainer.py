@@ -105,7 +105,6 @@ class MineSweeperTrainer:
             ).unsqueeze(0)
 
         # Store transition in memory
-        # FIXME: tensor shape 검증 필요
         self.memory.push(
             state=state,
             action=torch.tensor([action]),
@@ -142,9 +141,9 @@ class MineSweeperTrainer:
         # Compute Q(s_t, a)
         #   The policy network returns Q(s),
         #   and then we choose the values corresponding to the given actions
-        state_action_values = torch.gather(
-            self.policy_net(batch.state), dim=1, index=batch.action
-        )
+        q = self.policy_net(batch.state)  # [batch_size, n_actions]
+        state_action_values = torch.gather(q, dim=1, index=batch.action.unsqueeze(1))
+        # [batch_size, 1]
 
         # Compute V(s_{t+1}) = R + γ * max_a Q(s_{t+1}, a)
         next_state_values = torch.zeros(self.batch_size)
@@ -157,7 +156,7 @@ class MineSweeperTrainer:
         # Compute loss
         criterion = torch.nn.SmoothL1Loss()
         loss: Tensor = criterion(
-            state_action_values, expected_state_action_values.unsqueeze(0)
+            state_action_values.squeeze(), expected_state_action_values
         )
 
         # Optimize policy network
