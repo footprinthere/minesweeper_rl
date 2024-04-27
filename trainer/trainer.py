@@ -114,7 +114,7 @@ class MineSweeperTrainer:
         )
 
         # Perform one step of optimization on the policy network
-        self._optimize()
+        loss = self._optimize()
 
         # Soft update the target network's weights
         #   Alternatively, we can update the target network's weights every C steps
@@ -127,7 +127,7 @@ class MineSweeperTrainer:
 
         self.steps_done += 1
         return TrainStepResult(
-            loss=None,
+            loss=loss,
             next_state=next_state,
             open_result=env_step_result.open_result,
         )
