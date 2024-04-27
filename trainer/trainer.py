@@ -57,7 +57,7 @@ class MineSweeperTrainer:
         self.steps_done = 0
         self.logs = TrainLog()
 
-    def train(self, n_episodes: int) -> None:
+    def train(self, n_episodes: int, log_file: Optional[str] = None) -> None:
         self.logs.clear()
 
         for i in tqdm(range(n_episodes)):
@@ -70,6 +70,11 @@ class MineSweeperTrainer:
                 step_result = self._step(state)
                 if step_result.loss is not None:
                     episode_loss += step_result.loss
+
+                if log_file is not None:
+                    raise NotImplementedError
+                else:
+                    tqdm.write(self.env.render())
 
                 if step_result.next_state is not None:
                     state = step_result.next_state
