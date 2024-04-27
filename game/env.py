@@ -30,7 +30,7 @@ class MineSweeperEnv:
 
     def step(self, action: int) -> EnvStepResult:
         x, y = action // self.board.width, action % self.board.width
-        result = self.board.open(x, y)
+        result = self.board.open_cell(x, y)
 
         return EnvStepResult(
             visible_board=self.board.visible_board,

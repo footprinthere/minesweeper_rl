@@ -53,7 +53,7 @@ class MineSweeperBoard:
         # Number of closed cells
         self.n_closed = self.width * self.height
 
-    def open(self, x: int, y: int) -> OpenResult:
+    def open_cell(self, x: int, y: int) -> OpenResult:
         """Opens a cell and returns the result of the step."""
 
         if self.is_opened(x, y):
