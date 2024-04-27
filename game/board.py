@@ -19,13 +19,18 @@ class MineSweeperBoard:
         self.n_mines = n_mines
 
         # Initialized in reset_board()
-        self.n_closed: int
         self._visible_board: list[list[int]]
         self._hidden_board: list[list[int]]
+        self._open_state: list[list[bool]]
+        self.n_closed: int
 
     @property
     def visible_board(self) -> list[list[int]]:
         return self._visible_board
+
+    @property
+    def open_state(self) -> list[list[bool]]:
+        return self._open_state
 
     def __str__(self) -> str:
         return self._board_to_str(
@@ -43,6 +48,8 @@ class MineSweeperBoard:
         self._visible_board = [
             [MineSweeperBoard.CLOSED] * self.width for _ in range(self.height)
         ]
+        # The open state of each cell
+        self._open_state = [[False] * self.width for _ in range(self.height)]
         # Number of closed cells
         self.n_closed = self.width * self.height
 
@@ -63,6 +70,7 @@ class MineSweeperBoard:
                 continue  # already opened
 
             self._visible_board[qx][qy] = self._hidden_board[qx][qy]
+            self._open_state[qx][qy] = True
             self.n_closed -= 1
 
             # Open neighboring positions if 0 is found
@@ -81,7 +89,7 @@ class MineSweeperBoard:
     def is_opened(self, x: int, y: int) -> bool:
         """Checks if a cell is opened."""
 
-        return self._visible_board[x][y] != MineSweeperBoard.CLOSED
+        return self._open_state[x][y]
 
     def _init_hidden_board(self) -> list[list[int]]:
         """Fills the hidden board with mines and numbers."""

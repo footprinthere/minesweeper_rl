@@ -44,6 +44,11 @@ class MineSweeperEnv:
 
         return torch.randint(0, self.board.height * self.board.width, size=(1,))
 
+    def get_action_mask(self) -> torch.Tensor:
+        """Returns a mask of valid actions."""
+
+        return torch.tensor(self.board.open_state) == False
+
     def render(self) -> str:
         """Returns a string representation of the current game state."""
 

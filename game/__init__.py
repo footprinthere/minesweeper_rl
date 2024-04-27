@@ -1,1 +1,1 @@
-from env import MineSweeperEnv
+from .env import MineSweeperEnv
