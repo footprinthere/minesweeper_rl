@@ -1,6 +1,5 @@
 from typing import Optional
-
-import torch
+import random
 
 from .board import MineSweeperBoard
 from .open_result import OpenResult
@@ -22,11 +21,11 @@ class MineSweeperEnv:
             OpenResult.DUPLICATED: -3,
         }
 
-    def reset(self, seed: Optional[int] = None) -> torch.Tensor:
+    def reset(self, seed: Optional[int] = None) -> list[list[int]]:
         """Resets the environment to a new game state. Should be called before `step()`."""
 
         self.board.reset_board(seed=seed)
-        return torch.tensor(self.board.visible_board, dtype=torch.float32)
+        return self.board.visible_board
 
     def step(self, action: int) -> EnvStepResult:
         x, y = action // self.board.width, action % self.board.width
@@ -39,15 +38,13 @@ class MineSweeperEnv:
             open_result=result,
         )
 
-    def sample_action(self) -> torch.Tensor:
+    def sample_action(self) -> int:
         """Returns a random action."""
 
-        return torch.randint(0, self.board.height * self.board.width, size=(1,))
+        return random.randrange(self.board.height * self.board.width)
 
-    def get_action_mask(self) -> torch.Tensor:
-        """Returns a mask of valid actions."""
-
-        return torch.tensor(self.board.open_state) == False
+    def get_open_state(self) -> list[list[bool]]:
+        return self.board.open_state
 
     def render(self) -> str:
         """Returns a string representation of the current game state."""
