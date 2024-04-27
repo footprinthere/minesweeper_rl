@@ -1,7 +1,7 @@
 import argparse
 
 from game import MineSweeperEnv
-from train import MineSweeperTrainer
+from trainer import MineSweeperTrainer
 
 
 def main():

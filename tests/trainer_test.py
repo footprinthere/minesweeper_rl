@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import torch
 
-from train import MineSweeperTrainer
+from trainer import MineSweeperTrainer
 from game import MineSweeperEnv
 
 
