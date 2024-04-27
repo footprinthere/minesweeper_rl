@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from itertools import count
 import math
 import random
+import os
 
 import torch
 from torch import Tensor
@@ -201,6 +202,8 @@ class TrainLog:
         self.max_q.clear()
 
     def plot(self, log_dir: str) -> None:
+        os.makedirs(log_dir, exist_ok=True)
+
         # Loss
         plt.title("Loss")
         plt.xlabel("episodes")
