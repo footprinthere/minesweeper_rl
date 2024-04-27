@@ -1,4 +1,5 @@
 from typing import Optional
+from dataclasses import dataclass, field
 from itertools import count
 import math
 import random
@@ -53,15 +54,10 @@ class MineSweeperTrainer:
         self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=lr)
 
         self.steps_done = 0
-        self.logs = {
-            "loss": [],
-            "duration": [],
-            "max_q": [],
-            "win": [],
-        }
+        self.logs = TrainLog()
 
     def train(self, n_episodes: int) -> None:
-        self._clear_logs()
+        self.logs.clear()
 
         for i in tqdm(range(n_episodes)):
             # Reset environment
@@ -80,10 +76,9 @@ class MineSweeperTrainer:
                     break  # episode terminated
 
             episode_loss /= t + 1
-            self.logs["loss"].append(episode_loss)
-            self.logs["duration"].append(t + 1)
-            self.logs["max_q"].append(...)  # TODO: Implement this
-            self.logs["win"].append(step_result.open_result == OpenResult.WIN)
+            self.logs.loss.append(episode_loss)
+            self.logs.duration.append(t + 1)
+            self.logs.win.append(step_result.open_result == OpenResult.WIN)
 
             tqdm.write(f"Episode {i} - loss {episode_loss :.4f}, duration {t + 1}")
 
@@ -183,9 +178,19 @@ class MineSweeperTrainer:
             raise NotImplementedError
 
         _max = torch.max(output, dim=1)
-        self.logs["max_q"].append(_max.values.item())
+        self.logs.max_q.append(_max.values.item())
         return int(_max.indices.item())
 
-    def _clear_logs(self) -> None:
-        for log in self.logs.values():
-            log.clear()
+
+@dataclass
+class TrainLog:
+    loss: list[float] = field(default_factory=list)
+    duration: list[int] = field(default_factory=list)
+    win: list[bool] = field(default_factory=list)
+    max_q: list[float] = field(default_factory=list)
+
+    def clear(self):
+        self.loss.clear()
+        self.duration.clear()
+        self.win.clear()
+        self.max_q.clear()
