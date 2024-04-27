@@ -7,6 +7,7 @@ import random
 import torch
 from torch import Tensor
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from model import MineSweeperCNN
 from game.env import MineSweeperEnv
@@ -85,8 +86,8 @@ class MineSweeperTrainer:
     def save_models(self, path: str) -> None:
         raise NotImplementedError
 
-    def plot_result(self, file_prefix: str) -> None:
-        raise NotImplementedError
+    def plot_logs(self, log_dir: str) -> None:
+        self.logs.plot(log_dir)
 
     def _step(self, state: Tensor) -> TrainStepResult:
         action = self._select_action(state)
@@ -194,3 +195,34 @@ class TrainLog:
         self.duration.clear()
         self.win.clear()
         self.max_q.clear()
+
+    def plot(self, log_dir: str) -> None:
+        # Loss
+        plt.title("Loss")
+        plt.xlabel("episodes")
+        plt.ylabel("loss")
+        plt.plot(self.loss)
+        plt.savefig(f"{log_dir}/loss.jpg")
+        plt.clf()
+
+        # Duration
+        plt.title("Duration")
+        plt.xlabel("episode")
+        plt.ylabel("duration")
+        plt.plot(self.duration)
+        plt.savefig(f"{log_dir}/duration.jpg")
+        plt.clf()
+
+        # Max Q value
+        plt.title("Max Q value")
+        plt.xlabel("step")
+        plt.ylabel("Q value")
+        plt.plot(self.max_q)
+        plt.savefig(f"{log_dir}/max_q.jpg")
+        plt.clf()
+
+        # Game result
+        plt.title("Result")
+        plt.plot(self.win, "r.")
+        plt.savefig(f"{log_dir}/result.jpg")
+        plt.clf()

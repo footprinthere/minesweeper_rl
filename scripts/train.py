@@ -7,7 +7,7 @@ from train import MineSweeperTrainer
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--prefix", type=str)
+    parser.add_argument("--log_dir", type=str)
 
     parser.add_argument("--board_height", type=int)
     parser.add_argument("--board_width", type=int)
@@ -45,7 +45,7 @@ def main():
 
     # Plot results
     print("Training completed. Plotting results...")
-    trainer.plot_result(file_prefix=args.prefix)
+    trainer.plot_logs(log_dir=args.log_dir)
 
 
 if __name__ == "__main__":
