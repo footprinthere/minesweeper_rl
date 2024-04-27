@@ -34,6 +34,3 @@ class MineSweeperCNN(nn.Module):
         x = x.reshape(x.size(0), -1)  # (N, C*H*W)
         x = self.ff(x)
         return x
-
-    def select_action():
-        pass
