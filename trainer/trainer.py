@@ -188,16 +188,14 @@ class MineSweeperTrainer:
         )
         if p < eps:
             # Explore
-            return self.env.sample_action()
+            return self.env.sample_action(exclude_opened=use_mask)
 
         # Exploit
         with torch.no_grad():
             output = self.policy_net(state)
         if use_mask:
-            mask = torch.logical_not(
-                torch.tensor(self.env.get_open_state(), dtype=torch.bool)
-            )
-            output = torch.masked_fill(output, mask=torch.flatten(mask), value=-1e9)
+            mask = torch.tensor(self.env.get_open_state(), dtype=torch.bool).flatten()
+            output = torch.masked_fill(output, mask=mask, value=-1e9)
 
         argmax = torch.max(output, dim=1).indices
         return int(argmax.item())

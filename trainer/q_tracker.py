@@ -50,7 +50,7 @@ class MaxQValTracker:
     def _sampling_step(self) -> Optional[Tensor]:
         """Perform one step of sampling."""
 
-        action = self.env.sample_action()
+        action = self.env.sample_action(exclude_opened=True)
         env_step_result = self.env.step(action)
         if env_step_result.terminated:
             return None
@@ -65,10 +65,8 @@ class MaxQValTracker:
         with torch.no_grad():
             output = self.policy_net(state)
         if self.use_mask:
-            mask = torch.logical_not(
-                torch.tensor(self.env.get_open_state(), dtype=torch.bool)
-            )
-            output = torch.masked_fill(output, mask=torch.flatten(mask), value=-1e9)
+            mask = torch.tensor(self.env.get_open_state(), dtype=torch.bool).flatten()
+            output = torch.masked_fill(output, mask=mask, value=-1e9)
 
         max_q = torch.max(output).item()
         max_q_softmax = torch.max(torch.softmax(output, dim=1)).item()

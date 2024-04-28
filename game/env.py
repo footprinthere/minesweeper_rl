@@ -38,10 +38,19 @@ class MineSweeperEnv:
             open_result=result,
         )
 
-    def sample_action(self) -> int:
+    def sample_action(self, exclude_opened: bool = False) -> int:
         """Returns a random action."""
 
-        return random.randrange(self._board.height * self._board.width)
+        if not exclude_opened:
+            return random.randrange(self._board.height * self._board.width)
+
+        closed_cells = []
+        for x in range(self._board.height):
+            for y in range(self._board.width):
+                if not self._board.is_opened(x, y):
+                    closed_cells.append(x * self._board.width + y)
+
+        return random.choice(closed_cells)
 
     def get_open_state(self) -> list[list[bool]]:
         return self._board.open_state
