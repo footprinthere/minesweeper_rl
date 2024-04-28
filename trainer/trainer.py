@@ -15,6 +15,7 @@ from game.env import MineSweeperEnv
 from game.open_result import OpenResult
 from .memory import ReplayMemory, Transition
 from .train_step_result import TrainStepResult
+from .q_tracker import MaxQValTracker
 
 
 class MineSweeperTrainer:
@@ -25,6 +26,7 @@ class MineSweeperTrainer:
         board_size: int,
         n_channels: int,
         model_depth: int,
+        q_tracker: MaxQValTracker,
         batch_size: int = 64,
         gamma: float = 0.99,
         eps_range: tuple[float, float] = (0.9, 0.05),
@@ -43,6 +45,8 @@ class MineSweeperTrainer:
             board_size=board_size, n_channels=n_channels, depth=model_depth
         )
         self.target_net.load_state_dict(self.policy_net.state_dict())
+
+        self.q_tracker = q_tracker
 
         self.batch_size = batch_size
         self.gamma = gamma
@@ -82,10 +86,15 @@ class MineSweeperTrainer:
                 else:
                     break  # episode terminated
 
+            # Save metrics
             episode_loss /= t + 1
             self.logs.loss.append(episode_loss)
             self.logs.duration.append(t + 1)
             self.logs.win.append(step_result.open_result == OpenResult.WIN)
+
+            max_q, max_q_softmax = self.q_tracker.get_max_q(self.policy_net)
+            self.logs.max_q.append(max_q)
+            self.logs.max_q_softmax.append(max_q_softmax)
 
             tqdm.write(f"Episode {i} - loss {episode_loss :.4f}, duration {t + 1}")
 
@@ -182,10 +191,9 @@ class MineSweeperTrainer:
             output = self.policy_net(state)
         if use_mask:
             raise NotImplementedError
-
-        _max = torch.max(output, dim=1)
-        self.logs.max_q.append(_max.values.item())
-        return int(_max.indices.item())
+        else:
+            argmax = torch.max(torch.softmax(output, dim=1), dim=1).indices
+            return int(argmax.item())
 
 
 @dataclass
@@ -194,42 +202,35 @@ class TrainLog:
     duration: list[int] = field(default_factory=list)
     win: list[bool] = field(default_factory=list)
     max_q: list[float] = field(default_factory=list)
+    max_q_softmax: list[float] = field(default_factory=list)
 
     def clear(self):
         self.loss.clear()
         self.duration.clear()
         self.win.clear()
         self.max_q.clear()
+        self.max_q_softmax.clear()
 
     def plot(self, log_dir: str) -> None:
         os.makedirs(log_dir, exist_ok=True)
 
-        # Loss
-        plt.title("Loss")
-        plt.xlabel("episodes")
-        plt.ylabel("loss")
-        plt.plot(self.loss)
-        plt.savefig(f"{log_dir}/loss.jpg")
-        plt.clf()
+        name_map = {
+            "loss": self.loss,
+            "duration": self.duration,
+            "max_q": self.max_q,
+            "max_q_softmax": self.max_q_softmax,
+        }
 
-        # Duration
-        plt.title("Duration")
-        plt.xlabel("episode")
-        plt.ylabel("duration")
-        plt.plot(self.duration)
-        plt.savefig(f"{log_dir}/duration.jpg")
-        plt.clf()
-
-        # Max Q value
-        plt.title("Max Q value")
-        plt.xlabel("step")
-        plt.ylabel("Q value")
-        plt.plot(self.max_q)
-        plt.savefig(f"{log_dir}/max_q.jpg")
-        plt.clf()
+        for name, log in name_map.items():
+            plt.title(name.upper())
+            plt.xlabel("episode")
+            plt.ylabel(name)
+            plt.plot(log)
+            plt.savefig(f"{log_dir}/{name}.jpg")
+            plt.clf()
 
         # Game result
-        plt.title("Result")
+        plt.title("RESULT")
         plt.plot(self.win, "r.")
         plt.savefig(f"{log_dir}/result.jpg")
         plt.clf()

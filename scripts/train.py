@@ -4,7 +4,7 @@ import os
 from pprint import pformat
 
 from game import MineSweeperEnv
-from trainer import MineSweeperTrainer
+from trainer import MineSweeperTrainer, MaxQValTracker
 
 
 def main():
@@ -18,6 +18,7 @@ def main():
 
     parser.add_argument("--batch_size", type=int)
     parser.add_argument("--n_episodes", type=int)
+    parser.add_argument("--q_sample_size", type=int)
 
     parser.add_argument("--n_channels", type=int)
     parser.add_argument("--model_depth", type=int)
@@ -38,6 +39,10 @@ def main():
     )
 
     # Prepare trainer
+    print("Preparing Q tracker...")
+    q_tracker = MaxQValTracker(env=env)
+    q_tracker.collect_samples(size=args.q_sample_size)
+
     print("Preparing trainer...")
     trainer = MineSweeperTrainer(
         env=env,
@@ -45,6 +50,7 @@ def main():
         n_channels=args.n_channels,
         model_depth=args.model_depth,
         batch_size=args.batch_size,
+        q_tracker=q_tracker,
     )
 
     # Train
