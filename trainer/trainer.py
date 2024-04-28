@@ -26,7 +26,6 @@ class MineSweeperTrainer:
         board_size: int,
         n_channels: int,
         model_depth: int,
-        q_tracker: MaxQValTracker,
         batch_size: int = 64,
         gamma: float = 0.99,
         eps_range: tuple[float, float] = (0.9, 0.05),
@@ -36,6 +35,7 @@ class MineSweeperTrainer:
         grad_max_norm: float = 1.0,
         memory_size: int = 1000,
         use_action_mask: bool = False,
+        q_sample_size: int = 20,
     ):
         self.env = env
 
@@ -46,8 +46,6 @@ class MineSweeperTrainer:
             board_size=board_size, n_channels=n_channels, depth=model_depth
         )
         self.target_net.load_state_dict(self.policy_net.state_dict())
-
-        self.q_tracker = q_tracker
 
         self.batch_size = batch_size
         self.gamma = gamma
@@ -63,6 +61,10 @@ class MineSweeperTrainer:
 
         self.steps_done = 0
         self.logs = TrainLog()
+        self.q_tracker = MaxQValTracker(
+            env=env, policy_net=self.policy_net, use_mask=use_action_mask
+        )
+        self.q_tracker.collect_samples(size=q_sample_size)
 
     def train(self, n_episodes: int, log_file: Optional[str] = None) -> None:
         self.logs.clear()
@@ -94,7 +96,7 @@ class MineSweeperTrainer:
             self.logs.duration.append(t + 1)
             self.logs.win.append(step_result.open_result == OpenResult.WIN)
 
-            max_q, max_q_softmax = self.q_tracker.get_max_q(self.policy_net)
+            max_q, max_q_softmax = self.q_tracker.get_max_q()
             self.logs.max_q.append(max_q)
             self.logs.max_q_softmax.append(max_q_softmax)
 
@@ -195,7 +197,7 @@ class MineSweeperTrainer:
             mask = torch.logical_not(
                 torch.tensor(self.env.get_open_state(), dtype=torch.bool)
             )
-            output = output.masked_fill(mask.reshape(-1), -1e9)
+            output = torch.masked_fill(output, mask=torch.flatten(mask), value=-1e9)
 
         argmax = torch.max(output, dim=1).indices
         return int(argmax.item())
