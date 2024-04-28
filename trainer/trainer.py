@@ -35,6 +35,7 @@ class MineSweeperTrainer:
         lr: float = 1e-4,
         grad_max_norm: float = 1.0,
         memory_size: int = 1000,
+        use_action_mask: bool = False,
     ):
         self.env = env
 
@@ -56,6 +57,7 @@ class MineSweeperTrainer:
         self.lr = lr
         self.grad_max_norm = grad_max_norm
         self.memory = ReplayMemory(capacity=memory_size)
+        self.use_action_mask = use_action_mask
 
         self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=lr)
 
@@ -105,7 +107,7 @@ class MineSweeperTrainer:
         self.logs.plot(log_dir)
 
     def _step(self, state: Tensor) -> TrainStepResult:
-        action = self._select_action(state)
+        action = self._select_action(state, use_mask=self.use_action_mask)
         env_step_result = self.env.step(action)
         if env_step_result.terminated:
             next_state = None
@@ -190,10 +192,13 @@ class MineSweeperTrainer:
         with torch.no_grad():
             output = self.policy_net(state)
         if use_mask:
-            raise NotImplementedError
-        else:
-            argmax = torch.max(torch.softmax(output, dim=1), dim=1).indices
-            return int(argmax.item())
+            mask = torch.logical_not(
+                torch.tensor(self.env.get_open_state(), dtype=torch.bool)
+            )
+            output = output.masked_fill(mask.reshape(-1), -1e9)
+
+        argmax = torch.max(output, dim=1).indices
+        return int(argmax.item())
 
 
 @dataclass

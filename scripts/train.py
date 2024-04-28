@@ -19,6 +19,7 @@ def main():
     parser.add_argument("--batch_size", type=int)
     parser.add_argument("--n_episodes", type=int)
     parser.add_argument("--q_sample_size", type=int)
+    parser.add_argument("--use_action_mask", action="store_true")
 
     parser.add_argument("--n_channels", type=int)
     parser.add_argument("--model_depth", type=int)
@@ -51,6 +52,7 @@ def main():
         model_depth=args.model_depth,
         batch_size=args.batch_size,
         q_tracker=q_tracker,
+        use_action_mask=args.use_action_mask,
     )
 
     # Train
