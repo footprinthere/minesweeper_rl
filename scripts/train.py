@@ -1,4 +1,7 @@
 import argparse
+import os
+
+from pprint import pformat
 
 from game import MineSweeperEnv
 from trainer import MineSweeperTrainer
@@ -20,6 +23,11 @@ def main():
     parser.add_argument("--model_depth", type=int)
 
     args = parser.parse_args()
+
+    # Save arguments
+    os.makedirs(args.log_dir, exist_ok=True)
+    with open(os.path.join(args.log_dir, "args.txt"), "w") as f:
+        f.write(pformat(vars(args)))
 
     # Prepare game environment
     print("Preparing game environment...")
