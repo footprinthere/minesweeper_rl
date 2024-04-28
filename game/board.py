@@ -14,6 +14,9 @@ class MineSweeperBoard:
     CLOSED = -2
 
     def __init__(self, height: int, width: int, n_mines: int):
+        if height * width <= n_mines:
+            raise ValueError("Number of mines must be less than the number of cells.")
+
         self.height = height
         self.width = width
         self.n_mines = n_mines
