@@ -184,6 +184,7 @@ class MineSweeperTrainer:
         eps = eps_end + (eps_start - eps_end) * math.exp(
             -1.0 * self.steps_done / self.train_param.eps_decay
         )
+        self.logs.eps.append(eps)
         if p < eps:
             # Explore
             return self.env.sample_action(exclude_opened=use_mask)
@@ -220,16 +221,19 @@ class MineSweeperTrainer:
 class TrainLog:
     loss: list[float] = field(default_factory=list)
     duration: list[int] = field(default_factory=list)
-    win: list[bool] = field(default_factory=list)
     max_q: list[float] = field(default_factory=list)
     max_q_softmax: list[float] = field(default_factory=list)
+    win: list[bool] = field(default_factory=list)
+
+    eps: list[float] = field(default_factory=list)
 
     def clear(self):
         self.loss.clear()
         self.duration.clear()
-        self.win.clear()
         self.max_q.clear()
         self.max_q_softmax.clear()
+        self.win.clear()
+        self.eps.clear()
 
     def plot(self, log_dir: str) -> None:
         os.makedirs(log_dir, exist_ok=True)
@@ -239,12 +243,11 @@ class TrainLog:
             "duration": self.duration,
             "max_q": self.max_q,
             "max_q_softmax": self.max_q_softmax,
+            "eps": self.eps,
         }
 
         for name, log in name_map.items():
             plt.title(name.upper())
-            plt.xlabel("episode")
-            plt.ylabel(name)
             plt.plot(log)
             plt.savefig(f"{log_dir}/{name}.jpg")
             plt.clf()
