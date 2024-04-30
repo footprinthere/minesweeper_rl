@@ -17,6 +17,7 @@ from .memory import ReplayMemory, Transition
 from .train_step_result import TrainStepResult
 from .q_tracker import MaxQValTracker
 from .parameter import TrainParameter
+from tools.visualize import visualize_2d_tensor
 
 
 class MineSweeperTrainer:
@@ -179,14 +180,33 @@ class MineSweeperTrainer:
             return self.env.sample_action(exclude_opened=use_mask)
 
         # Exploit
+        output = self._compute_q(state, use_mask=use_mask)
+        argmax = torch.max(output, dim=1).indices
+        return int(argmax.item())
+
+    def _compute_q(self, state: Tensor, use_mask: bool) -> Tensor:
+        """Computes Q(s, a...) with the policy network"""
+
         with torch.no_grad():
             output = self.policy_net(state)
         if use_mask:
             mask = torch.tensor(self.env.get_open_state(), dtype=torch.bool).flatten()
             output = torch.masked_fill(output, mask=mask, value=-1e9)
 
-        argmax = torch.max(output, dim=1).indices
-        return int(argmax.item())
+        # FIXME: state는 받으면서 mask는 현재 상태 사용?
+
+        return output
+
+    def visualize_q_values(
+        self,
+        state: Tensor,
+        use_mask: bool = False,
+        title: Optional[str] = None,
+        save_path: Optional[str] = None,
+    ) -> None:
+        output = self._compute_q(state, use_mask=use_mask)
+        output = output.reshape(self.env.board_height, self.env.board_width)
+        visualize_2d_tensor(output, lower_bound=-1e8, title=title, save_path=save_path)
 
 
 @dataclass

@@ -9,6 +9,9 @@ from .env_step_result import EnvStepResult
 class MineSweeperEnv:
 
     def __init__(self, board_height: int, board_width: int, n_mines: int):
+        self.board_height = board_height
+        self.board_width = board_width
+        self.n_mines = n_mines
         self._board = MineSweeperBoard(
             height=board_height, width=board_width, n_mines=n_mines
         )
