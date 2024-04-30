@@ -1,7 +1,7 @@
 from torch import nn, Tensor
 import torch.nn.functional as F
 
-from trainer import ModelParameter
+from .parameter import ModelParameter
 
 
 class MineSweeperCNN(nn.Module):

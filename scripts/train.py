@@ -4,7 +4,8 @@ import os
 from pprint import pformat
 
 from game import MineSweeperEnv
-from trainer import MineSweeperTrainer, ModelParameter, TrainParameter
+from model import ModelParameter
+from trainer import MineSweeperTrainer, TrainParameter
 
 
 def main():

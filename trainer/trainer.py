@@ -10,13 +10,13 @@ from torch import Tensor
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-from model import MineSweeperCNN
+from model import MineSweeperCNN, ModelParameter
 from game.env import MineSweeperEnv
 from game.open_result import OpenResult
 from .memory import ReplayMemory, Transition
 from .train_step_result import TrainStepResult
 from .q_tracker import MaxQValTracker
-from .parameter import ModelParameter, TrainParameter
+from .parameter import TrainParameter
 
 
 class MineSweeperTrainer:

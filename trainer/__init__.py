@@ -1,3 +1,3 @@
 from .trainer import MineSweeperTrainer
 from .q_tracker import MaxQValTracker
-from .parameter import ModelParameter, TrainParameter
+from .parameter import TrainParameter
