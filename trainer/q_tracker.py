@@ -4,6 +4,7 @@ import torch
 from torch import Tensor, nn
 
 from game import MineSweeperEnv
+from game.board import MineSweeperBoard
 
 
 class MaxQValTracker:
@@ -66,7 +67,7 @@ class MaxQValTracker:
         with torch.no_grad():
             output = self.policy_net(state)
         if self.use_mask:
-            mask = torch.tensor(self.env.get_open_state(), dtype=torch.bool).flatten()
+            mask = (state == MineSweeperBoard.CLOSED).flatten()
             output = torch.masked_fill(output, mask=mask, value=-1e9)
 
         max_q = torch.max(output).item()
