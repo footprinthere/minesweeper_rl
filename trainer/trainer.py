@@ -26,6 +26,7 @@ class MineSweeperTrainer:
         env: MineSweeperEnv,
         model_param: ModelParameter,
         train_param: TrainParameter,
+        log_dir: Optional[str] = None,
     ):
         self.env = env
 
@@ -48,7 +49,24 @@ class MineSweeperTrainer:
         )
         self.q_tracker.collect_samples(size=self.train_param.q_sample_size)
 
-    def train(self, n_episodes: int, log_file: Optional[str] = None) -> None:
+        self.log_dir = log_dir
+
+    def train(self, n_episodes: int, output_file: Optional[str] = None) -> None:
+
+        def _write(content: str):
+            if output_file is None:
+                return
+            if output_file == "stdin":
+                tqdm.write(content)
+                return
+
+            if self.log_dir is not None:
+                path = os.path.join(self.log_dir, output_file)
+            else:
+                path = output_file
+            with open(path, "a") as f:
+                f.write(content + "\n")
+
         self.logs.clear()
 
         for i in tqdm(range(n_episodes)):
@@ -61,10 +79,7 @@ class MineSweeperTrainer:
                 if loss is not None:
                     episode_loss += loss
 
-                if log_file is not None:
-                    raise NotImplementedError
-                else:
-                    tqdm.write(self.env.render())
+                _write(self.env.render())
 
                 if self.env.get_state() is None:
                     break  # episode terminated
@@ -79,13 +94,15 @@ class MineSweeperTrainer:
             self.logs.max_q.append(max_q)
             self.logs.max_q_softmax.append(max_q_softmax)
 
-            tqdm.write(f"Episode {i} - loss {episode_loss :.4f}, duration {t + 1}")
+            _write(f"Episode {i} - loss {episode_loss :.4f}, duration {t + 1}")
 
-    def save_models(self, path: str) -> None:
+    def save_models(self) -> None:
         raise NotImplementedError
 
-    def plot_logs(self, log_dir: str) -> None:
-        self.logs.plot(log_dir)
+    def plot_logs(self) -> None:
+        if self.log_dir is None:
+            raise ValueError("log_dir is not set")
+        self.logs.plot(self.log_dir)
 
     def _step(self) -> tuple[Optional[float], bool]:
         prev_state = self.env.get_state()

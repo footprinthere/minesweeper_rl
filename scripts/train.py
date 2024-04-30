@@ -59,15 +59,16 @@ def main():
         env=env,
         model_param=model_param,
         train_param=train_param,
+        log_dir=args.log_dir,
     )
 
     # Train
     print("Start training...")
-    trainer.train(n_episodes=args.n_episodes)
+    trainer.train(n_episodes=args.n_episodes, output_file="stdin")
 
     # Plot results
     print("Training completed. Plotting results...")
-    trainer.plot_logs(log_dir=args.log_dir)
+    trainer.plot_logs()
 
 
 if __name__ == "__main__":
