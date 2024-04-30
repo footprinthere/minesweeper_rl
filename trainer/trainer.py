@@ -197,8 +197,10 @@ class MineSweeperTrainer:
     def _compute_q(self, use_mask: bool) -> Tensor:
         """Computes Q(s, a...) with the policy network"""
 
+        if (state := self.env.get_state()) is None:
+            raise ValueError("Episode is already terminated")
         with torch.no_grad():
-            output = self.policy_net(self.env.get_state())
+            output = self.policy_net(state)
         if use_mask:
             output = torch.masked_fill(
                 output, mask=self.env.get_open_mask(), value=-1e9
