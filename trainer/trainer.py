@@ -16,6 +16,7 @@ from game.open_result import OpenResult
 from .memory import ReplayMemory, Transition
 from .train_step_result import TrainStepResult
 from .q_tracker import MaxQValTracker
+from .parameter import ModelParameter, TrainParameter
 
 
 class MineSweeperTrainer:
@@ -23,48 +24,29 @@ class MineSweeperTrainer:
     def __init__(
         self,
         env: MineSweeperEnv,
-        board_size: int,
-        n_channels: int,
-        model_depth: int,
-        batch_size: int = 64,
-        gamma: float = 0.99,
-        eps_range: tuple[float, float] = (0.9, 0.05),
-        eps_decay: int = 1000,
-        tau: float = 0.005,
-        lr: float = 1e-4,
-        grad_max_norm: float = 1.0,
-        memory_size: int = 1000,
-        use_action_mask: bool = False,
-        q_sample_size: int = 20,
+        model_param: ModelParameter,
+        train_param: TrainParameter,
     ):
         self.env = env
 
-        self.policy_net = MineSweeperCNN(
-            board_size=board_size, n_channels=n_channels, depth=model_depth
-        )
-        self.target_net = MineSweeperCNN(
-            board_size=board_size, n_channels=n_channels, depth=model_depth
-        )
+        self.policy_net = MineSweeperCNN.with_parameter(model_param)
+        self.target_net = MineSweeperCNN.with_parameter(model_param)
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
-        self.batch_size = batch_size
-        self.gamma = gamma
-        self.eps_start, self.eps_end = eps_range
-        self.eps_decay = eps_decay
-        self.tau = tau
-        self.lr = lr
-        self.grad_max_norm = grad_max_norm
-        self.memory = ReplayMemory(capacity=memory_size)
-        self.use_action_mask = use_action_mask
-
-        self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=lr)
+        self.train_param = train_param
+        self.memory = ReplayMemory(capacity=self.train_param.memory_size)
+        self.optimizer = torch.optim.Adam(
+            self.policy_net.parameters(), lr=self.train_param.lr
+        )
 
         self.steps_done = 0
         self.logs = TrainLog()
         self.q_tracker = MaxQValTracker(
-            env=env, policy_net=self.policy_net, use_mask=use_action_mask
+            env=env,
+            policy_net=self.policy_net,
+            use_mask=self.train_param.use_action_mask,
         )
-        self.q_tracker.collect_samples(size=q_sample_size)
+        self.q_tracker.collect_samples(size=self.train_param.q_sample_size)
 
     def train(self, n_episodes: int, log_file: Optional[str] = None) -> None:
         self.logs.clear()
@@ -109,7 +91,7 @@ class MineSweeperTrainer:
         self.logs.plot(log_dir)
 
     def _step(self, state: Tensor) -> TrainStepResult:
-        action = self._select_action(state, use_mask=self.use_action_mask)
+        action = self._select_action(state, use_mask=self.train_param.use_action_mask)
         env_step_result = self.env.step(action)
         if env_step_result.terminated:
             next_state = None
@@ -135,7 +117,8 @@ class MineSweeperTrainer:
             self.target_net.parameters(), self.policy_net.parameters()
         ):
             target_param.data.copy_(
-                self.tau * policy_param.data + (1.0 - self.tau) * target_param.data
+                self.train_param.tau * policy_param.data
+                + (1.0 - self.train_param.tau) * target_param.data
             )
 
         self.steps_done += 1
@@ -146,10 +129,10 @@ class MineSweeperTrainer:
         )
 
     def _optimize(self) -> Optional[float]:
-        if self.memory.size < self.batch_size:
+        if self.memory.size < self.train_param.batch_size:
             return None
 
-        transitions = self.memory.sample(self.batch_size)
+        transitions = self.memory.sample(self.train_param.batch_size)
         batch, non_final_mask = Transition.concat(transitions)
 
         # Compute Q(s_t, a)
@@ -160,12 +143,14 @@ class MineSweeperTrainer:
         # [batch_size, 1]
 
         # Compute V(s_{t+1}) = R + γ * max_a Q(s_{t+1}, a)
-        next_state_values = torch.zeros(self.batch_size)
+        next_state_values = torch.zeros(self.train_param.batch_size)
         with torch.no_grad():
             next_state_values[non_final_mask] = torch.max(
                 self.target_net(batch.next_state), dim=1
             ).values
-        expected_state_action_values = next_state_values * self.gamma + batch.reward
+        expected_state_action_values = (
+            next_state_values * self.train_param.gamma + batch.reward
+        )
 
         # Compute loss
         criterion = torch.nn.SmoothL1Loss()
@@ -176,15 +161,18 @@ class MineSweeperTrainer:
         # Optimize policy network
         self.optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.policy_net.parameters(), self.grad_max_norm)
+        torch.nn.utils.clip_grad_norm_(
+            self.policy_net.parameters(), self.train_param.grad_max_norm
+        )
         self.optimizer.step()
 
         return loss.item()
 
     def _select_action(self, state: Tensor, use_mask: bool = False) -> int:
         p = random.random()
-        eps = self.eps_end + (self.eps_start - self.eps_end) * math.exp(
-            -1.0 * self.steps_done / self.eps_decay
+        eps_start, eps_end = self.train_param.eps_range
+        eps = eps_end + (eps_start - eps_end) * math.exp(
+            -1.0 * self.steps_done / self.train_param.eps_decay
         )
         if p < eps:
             # Explore

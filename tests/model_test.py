@@ -10,7 +10,7 @@ class ModelTest(unittest.TestCase):
     def test_init(self):
         print("init_test")
 
-        model = MineSweeperCNN(board_size=90, n_channels=32, depth=3)
+        model = MineSweeperCNN(board_size=90, n_channels=32, cnn_depth=3, ff_dim=32)
 
         self.assertEqual(model._input.in_channels, 1)
         self.assertEqual(model._input.out_channels, 32)
@@ -30,7 +30,7 @@ class ModelTest(unittest.TestCase):
     def test_forward(self):
         print("forward_test")
 
-        model = MineSweeperCNN(board_size=90, n_channels=32, depth=3)
+        model = MineSweeperCNN(board_size=90, n_channels=32, cnn_depth=3, ff_dim=32)
 
         state = torch.randn(5, 9, 10)
         output = model(state)

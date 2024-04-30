@@ -4,7 +4,7 @@ import os
 from pprint import pformat
 
 from game import MineSweeperEnv
-from trainer import MineSweeperTrainer
+from trainer import MineSweeperTrainer, ModelParameter, TrainParameter
 
 
 def main():
@@ -16,13 +16,15 @@ def main():
     parser.add_argument("--board_width", type=int)
     parser.add_argument("--n_mines", type=int)
 
+    parser.add_argument("--n_channels", type=int)
+    parser.add_argument("--model_depth", type=int)
+    parser.add_argument("--ff_dim", type=int)
+
     parser.add_argument("--batch_size", type=int)
-    parser.add_argument("--n_episodes", type=int)
     parser.add_argument("--q_sample_size", type=int)
     parser.add_argument("--use_action_mask", action="store_true")
 
-    parser.add_argument("--n_channels", type=int)
-    parser.add_argument("--model_depth", type=int)
+    parser.add_argument("--n_episodes", type=int)
 
     args = parser.parse_args()
 
@@ -41,14 +43,21 @@ def main():
 
     # Prepare trainer
     print("Preparing trainer...")
-    trainer = MineSweeperTrainer(
-        env=env,
+    model_param = ModelParameter(
         board_size=args.board_height * args.board_width,
         n_channels=args.n_channels,
-        model_depth=args.model_depth,
+        cnn_depth=args.model_depth,
+        ff_dim=args.ff_dim,
+    )
+    train_param = TrainParameter(
         batch_size=args.batch_size,
-        use_action_mask=args.use_action_mask,
         q_sample_size=args.q_sample_size,
+        use_action_mask=args.use_action_mask,
+    )
+    trainer = MineSweeperTrainer(
+        env=env,
+        model_param=model_param,
+        train_param=train_param,
     )
 
     # Train

@@ -1,6 +1,8 @@
 from torch import nn, Tensor
 import torch.nn.functional as F
 
+from trainer import ModelParameter
+
 
 class MineSweeperCNN(nn.Module):
 
@@ -8,7 +10,8 @@ class MineSweeperCNN(nn.Module):
         self,
         board_size: int,
         n_channels: int,
-        depth: int,
+        cnn_depth: int,
+        ff_dim: int,
         padding: int | str = "same",
     ):
         super().__init__()
@@ -17,11 +20,24 @@ class MineSweeperCNN(nn.Module):
         self._cnns = nn.ModuleList(
             [
                 nn.Conv2d(n_channels, n_channels, (3, 3), padding=padding)
-                for _ in range(depth)
+                for _ in range(cnn_depth)
             ]
         )
-        self._ff = nn.Linear(
-            in_features=n_channels * board_size, out_features=board_size
+        self._ffs = nn.ModuleList(
+            [
+                nn.Linear(in_features=n_channels * board_size, out_features=ff_dim),
+                nn.Linear(in_features=ff_dim, out_features=ff_dim),
+            ]
+        )
+        self._output = nn.Linear(in_features=ff_dim, out_features=board_size)
+
+    @classmethod
+    def with_parameter(cls, parameter: ModelParameter) -> "MineSweeperCNN":
+        return cls(
+            board_size=parameter.board_size,
+            n_channels=parameter.n_channels,
+            cnn_depth=parameter.cnn_depth,
+            ff_dim=parameter.ff_dim,
         )
 
     def forward(self, state: Tensor) -> Tensor:
@@ -32,5 +48,7 @@ class MineSweeperCNN(nn.Module):
             x = F.relu(layer(x))
 
         x = x.reshape(x.size(0), -1)  # (N, C*H*W)
-        x = self._ff(x)
+        for layer in self._ffs:
+            x = F.relu(layer(x))
+        x = self._output(x)  # (N, H*W)
         return x
