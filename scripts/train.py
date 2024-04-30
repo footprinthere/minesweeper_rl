@@ -11,21 +11,21 @@ from trainer import MineSweeperTrainer, TrainParameter
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--log_dir", type=str)
+    parser.add_argument("--log_dir", type=str, required=True)
 
-    parser.add_argument("--board_height", type=int)
-    parser.add_argument("--board_width", type=int)
-    parser.add_argument("--n_mines", type=int)
+    parser.add_argument("--board_height", type=int, required=True)
+    parser.add_argument("--board_width", type=int, required=True)
+    parser.add_argument("--n_mines", type=int, required=True)
 
-    parser.add_argument("--n_channels", type=int)
-    parser.add_argument("--model_depth", type=int)
-    parser.add_argument("--ff_dim", type=int)
+    parser.add_argument("--n_channels", type=int, required=True)
+    parser.add_argument("--model_depth", type=int, required=True)
+    parser.add_argument("--ff_dim", type=int, required=True)
 
-    parser.add_argument("--batch_size", type=int)
-    parser.add_argument("--q_sample_size", type=int)
+    parser.add_argument("--batch_size", type=int, required=True)
+    parser.add_argument("--q_sample_size", type=int, required=True)
     parser.add_argument("--use_action_mask", action="store_true")
 
-    parser.add_argument("--n_episodes", type=int)
+    parser.add_argument("--n_episodes", type=int, required=True)
 
     args = parser.parse_args()
 
