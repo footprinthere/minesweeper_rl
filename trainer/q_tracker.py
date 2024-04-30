@@ -27,7 +27,8 @@ class MaxQValTracker:
         while len(self.samples) < size:
             if state is None:
                 # Reset the environment
-                state = torch.tensor(self.env.reset(), dtype=torch.float32).unsqueeze(0)
+                self.env.reset()
+                state = self.env.get_state()
             else:
                 # Sample the next state
                 state = self._sampling_step()

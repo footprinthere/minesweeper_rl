@@ -23,7 +23,8 @@ class EnvTest(unittest.TestCase):
     def test_reset(self):
         print("test_reset")
 
-        board = self.env.reset(seed=1)
+        self.env.reset(seed=1)
+        board = self.env.get_board()
         self.assertEqual(len(board), self.H)
         self.assertEqual(len(board[0]), self.W)
 

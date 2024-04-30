@@ -14,7 +14,6 @@ from model import MineSweeperCNN, ModelParameter
 from game.env import MineSweeperEnv
 from game.open_result import OpenResult
 from .memory import ReplayMemory, Transition
-from .train_step_result import TrainStepResult
 from .q_tracker import MaxQValTracker
 from .parameter import TrainParameter
 from tools.visualize import visualize_2d_tensor
@@ -54,30 +53,27 @@ class MineSweeperTrainer:
 
         for i in tqdm(range(n_episodes)):
             # Reset environment
-            state = torch.tensor(self.env.reset(), dtype=torch.float32).unsqueeze(0)
-            # [1, H, W]
+            self.env.reset()
 
             episode_loss = 0.0
             for t in count():
-                step_result = self._step(state)
-                if step_result.loss is not None:
-                    episode_loss += step_result.loss
+                loss, win = self._step()
+                if loss is not None:
+                    episode_loss += loss
 
                 if log_file is not None:
                     raise NotImplementedError
                 else:
                     tqdm.write(self.env.render())
 
-                if step_result.next_state is not None:
-                    state = step_result.next_state
-                else:
+                if self.env.get_state() is None:
                     break  # episode terminated
 
             # Save metrics
             episode_loss /= t + 1
             self.logs.loss.append(episode_loss)
             self.logs.duration.append(t + 1)
-            self.logs.win.append(step_result.open_result == OpenResult.WIN)
+            self.logs.win.append(win)
 
             max_q, max_q_softmax = self.q_tracker.get_max_q()
             self.logs.max_q.append(max_q)
@@ -91,19 +87,17 @@ class MineSweeperTrainer:
     def plot_logs(self, log_dir: str) -> None:
         self.logs.plot(log_dir)
 
-    def _step(self, state: Tensor) -> TrainStepResult:
-        action = self._select_action(state, use_mask=self.train_param.use_action_mask)
+    def _step(self) -> tuple[Optional[float], bool]:
+        prev_state = self.env.get_state()
+        assert prev_state is not None
+        action = self._select_action(use_mask=self.train_param.use_action_mask)
+
         env_step_result = self.env.step(action)
-        if env_step_result.terminated:
-            next_state = None
-        else:
-            next_state = torch.tensor(
-                env_step_result.visible_board, dtype=torch.float32
-            ).unsqueeze(0)
+        next_state = self.env.get_state()
 
         # Store transition in memory
         self.memory.push(
-            state=state,
+            state=prev_state,
             action=torch.tensor([action]),
             reward=torch.tensor([env_step_result.reward]),
             next_state=next_state,
@@ -123,11 +117,9 @@ class MineSweeperTrainer:
             )
 
         self.steps_done += 1
-        return TrainStepResult(
-            loss=loss,
-            next_state=next_state,
-            open_result=env_step_result.open_result,
-        )
+
+        win = env_step_result.open_result == OpenResult.WIN
+        return loss, win
 
     def _optimize(self) -> Optional[float]:
         if self.memory.size < self.train_param.batch_size:
@@ -169,7 +161,7 @@ class MineSweeperTrainer:
 
         return loss.item()
 
-    def _select_action(self, state: Tensor, use_mask: bool = False) -> int:
+    def _select_action(self, use_mask: bool = False) -> int:
         p = random.random()
         eps_start, eps_end = self.train_param.eps_range
         eps = eps_end + (eps_start - eps_end) * math.exp(
@@ -180,31 +172,29 @@ class MineSweeperTrainer:
             return self.env.sample_action(exclude_opened=use_mask)
 
         # Exploit
-        output = self._compute_q(state, use_mask=use_mask)
+        output = self._compute_q(use_mask=use_mask)
         argmax = torch.max(output, dim=1).indices
         return int(argmax.item())
 
-    def _compute_q(self, state: Tensor, use_mask: bool) -> Tensor:
+    def _compute_q(self, use_mask: bool) -> Tensor:
         """Computes Q(s, a...) with the policy network"""
 
         with torch.no_grad():
-            output = self.policy_net(state)
+            output = self.policy_net(self.env.get_state())
         if use_mask:
-            mask = torch.tensor(self.env.get_open_state(), dtype=torch.bool).flatten()
-            output = torch.masked_fill(output, mask=mask, value=-1e9)
-
-        # FIXME: state는 받으면서 mask는 현재 상태 사용?
+            output = torch.masked_fill(
+                output, mask=self.env.get_open_mask(), value=-1e9
+            )
 
         return output
 
     def visualize_q_values(
         self,
-        state: Tensor,
         use_mask: bool = False,
         title: Optional[str] = None,
         save_path: Optional[str] = None,
     ) -> None:
-        output = self._compute_q(state, use_mask=use_mask)
+        output = self._compute_q(use_mask=use_mask)
         output = output.reshape(self.env.board_height, self.env.board_width)
         visualize_2d_tensor(output, lower_bound=-1e8, title=title, save_path=save_path)
 
