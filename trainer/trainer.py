@@ -96,14 +96,6 @@ class MineSweeperTrainer:
 
             _write(f"Episode {i} - loss {episode_loss :.4f}, duration {t + 1}")
 
-    def save_models(self) -> None:
-        raise NotImplementedError
-
-    def plot_logs(self) -> None:
-        if self.log_dir is None:
-            raise ValueError("log_dir is not set")
-        self.logs.plot(self.log_dir)
-
     def _step(self) -> tuple[Optional[float], bool]:
         prev_state = self.env.get_state()
         assert prev_state is not None
@@ -207,6 +199,28 @@ class MineSweeperTrainer:
             )
 
         return output
+
+    def predict(self):
+        self.env.reset()
+
+        for t in count():
+            self._predict_step()
+            print(self.env.render())
+            if self.env.get_state() is None:
+                break
+
+        raise NotImplementedError
+
+    def _predict_step(self):
+        raise NotImplementedError
+
+    def save_models(self) -> None:
+        raise NotImplementedError
+
+    def plot_logs(self) -> None:
+        if self.log_dir is None:
+            raise ValueError("log_dir is not set")
+        self.logs.plot(self.log_dir)
 
     def visualize_q_values(
         self,
