@@ -222,6 +222,17 @@ class MineSweeperTrainer:
         self.policy_net.save_state(path_format.format("policy"))
         self.target_net.save_state(path_format.format("target"))
 
+    def load_models(self, directory: Optional[str] = None) -> None:
+        """If directory is None, it loads the models from the project_dir"""
+        if directory is None:
+            if self.project_dir is None:
+                raise ValueError("project_dir is not set")
+            directory = self.project_dir
+
+        path_format = os.path.join(directory, "{}.pt")
+        self.policy_net.load_state(path_format.format("policy"))
+        self.target_net.load_state(path_format.format("target"))
+
     def plot_logs(self) -> None:
         if self.project_dir is None:
             raise ValueError("project_dir is not set")
