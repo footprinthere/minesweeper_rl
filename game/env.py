@@ -12,11 +12,11 @@ from .env_step_result import EnvStepResult
 class MineSweeperEnv:
 
     _reward_map = {
-        OpenResult.FAIL: -10,
-        OpenResult.WIN: 10,
-        OpenResult.ADJACENT: 1,
-        OpenResult.ISOLATED: -1,
-        OpenResult.DUPLICATED: -3,
+        OpenResult.FAIL: -1,
+        OpenResult.WIN: 1,
+        OpenResult.ADJACENT: 0.3,
+        OpenResult.ISOLATED: -0.3,
+        OpenResult.DUPLICATED: -0.3,
     }
 
     def __init__(self, board_height: int, board_width: int, n_mines: int):
