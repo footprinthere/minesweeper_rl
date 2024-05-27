@@ -48,7 +48,7 @@ class MineSweeperCNN(nn.Module):
         for layer in self._cnns:
             x = F.relu(layer(x))
 
-        x = x.reshape(x.size(0), -1)  # (N, C*H*W)
+        x = torch.flatten(x, start_dim=1)  # (N, C*H*W)
         for layer in self._ffs:
             x = F.relu(layer(x))
         x = self._output(x)  # (N, H*W)
