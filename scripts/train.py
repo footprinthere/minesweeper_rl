@@ -12,6 +12,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--project_dir", type=str, required=True)
+    parser.add_argument("--log_file", type=str, default=None)
 
     parser.add_argument("--board_height", type=int, required=True)
     parser.add_argument("--board_width", type=int, required=True)
@@ -64,7 +65,13 @@ def main():
 
     # Train
     print("Start training...")
-    trainer.train(n_episodes=args.n_episodes, output_file="stdin")
+    if args.log_file is None:
+        output_file = None
+    elif args.log_file == "stdin":
+        output_file = "stdin"
+    else:
+        output_file = os.path.join(args.project_dir, args.log_file)
+    trainer.train(n_episodes=args.n_episodes, output_file=output_file)
 
     # Plot results
     print("Training completed. Plotting results...")
