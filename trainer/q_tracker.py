@@ -13,10 +13,12 @@ class MaxQValTracker:
         self,
         env: MineSweeperEnv,
         policy_net: nn.Module,
+        device: torch.device,
         use_mask: bool = False,
     ):
         self.env = env
         self.policy_net = policy_net
+        self.device = device
         self.use_mask = use_mask
 
         self.samples: list[Tensor] = []  # [1, H, W]
@@ -35,7 +37,7 @@ class MaxQValTracker:
                 state = self._sampling_step()
 
             if state is not None:
-                self.samples.append(state)
+                self.samples.append(state.to(self.device))
 
     def get_max_q(self) -> tuple[float, float]:
         """Calculate the average Q-value of the collected samples."""
@@ -67,7 +69,7 @@ class MaxQValTracker:
         with torch.no_grad():
             output = self.policy_net(state)
         if self.use_mask:
-            mask = (state == MineSweeperBoard.CLOSED).flatten()
+            mask = (state == MineSweeperBoard.CLOSED).flatten().to(self.device)
             output = torch.masked_fill(output, mask=mask, value=-1e9)
 
         max_q = torch.max(output).item()

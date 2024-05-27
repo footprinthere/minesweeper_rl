@@ -39,6 +39,13 @@ class Transition:
             non_final_mask,
         )
 
+    def to_device(self, device: torch.device) -> None:
+        self.state = self.state.to(device)
+        self.action = self.action.to(device)
+        self.reward = self.reward.to(device)
+        if self.next_state is not None:
+            self.next_state = self.next_state.to(device)
+
 
 class ReplayMemory:
     def __init__(self, capacity: int):

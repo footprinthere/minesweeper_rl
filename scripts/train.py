@@ -1,6 +1,7 @@
 import argparse
 import os
 
+import torch
 from pprint import pformat
 
 from game import MineSweeperEnv
@@ -56,12 +57,15 @@ def main():
         q_sample_size=args.q_sample_size,
         use_action_mask=args.use_action_mask,
     )
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     trainer = MineSweeperTrainer(
         env=env,
         model_param=model_param,
         train_param=train_param,
+        device=device,
         project_dir=args.project_dir,
     )
+    print(f"Using device: {device}")
 
     # Train
     print("Start training...")

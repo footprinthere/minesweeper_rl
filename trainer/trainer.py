@@ -26,6 +26,7 @@ class MineSweeperTrainer:
         env: MineSweeperEnv,
         model_param: ModelParameter,
         train_param: TrainParameter,
+        device: torch.device,
         project_dir: Optional[str] = None,
     ):
         self.env = env
@@ -45,11 +46,16 @@ class MineSweeperTrainer:
         self.q_tracker = MaxQValTracker(
             env=env,
             policy_net=self.policy_net,
+            device=device,
             use_mask=self.train_param.use_action_mask,
         )
         self.q_tracker.collect_samples(size=self.train_param.q_sample_size)
 
+        self.device = device
         self.project_dir = project_dir
+
+        self.policy_net.to(self.device)
+        self.target_net.to(self.device)
 
     def train(self, n_episodes: int, output_file: Optional[str] = None) -> None:
 
@@ -136,6 +142,7 @@ class MineSweeperTrainer:
 
         transitions = self.memory.sample(self.train_param.batch_size)
         batch, non_final_mask = Transition.concat(transitions)
+        batch.to_device(self.device)
 
         # Compute Q(s_t, a)
         #   The policy network returns Q(s),
@@ -145,7 +152,7 @@ class MineSweeperTrainer:
         # [batch_size, 1]
 
         # Compute V(s_{t+1}) = R + γ * max_a Q(s_{t+1}, a)
-        next_state_values = torch.zeros(self.train_param.batch_size)
+        next_state_values = torch.zeros(self.train_param.batch_size, device=self.device)
         with torch.no_grad():
             next_state_values[non_final_mask] = torch.max(
                 self.target_net(batch.next_state), dim=1
@@ -192,10 +199,10 @@ class MineSweeperTrainer:
         if (state := self.env.get_state()) is None:
             raise ValueError("Episode is already terminated")
         with torch.no_grad():
-            output = self.policy_net(state)
+            output = self.policy_net(state.to(self.device))
         if use_mask:
             output = torch.masked_fill(
-                output, mask=self.env.get_open_mask(), value=-1e9
+                output, mask=self.env.get_open_mask().to(self.device), value=-1e9
             )
 
         return output
@@ -244,7 +251,7 @@ class MineSweeperTrainer:
         title: Optional[str] = None,
         save_path: Optional[str] = None,
     ) -> None:
-        output = self._compute_q(use_mask=use_mask)
+        output = self._compute_q(use_mask=use_mask).cpu()
         output = output.reshape(self.env.board_height, self.env.board_width)
         visualize_2d_tensor(output, lower_bound=-1e8, title=title, save_path=save_path)
 
