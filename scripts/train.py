@@ -11,7 +11,7 @@ from trainer import MineSweeperTrainer, TrainParameter
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--log_dir", type=str, required=True)
+    parser.add_argument("--project_dir", type=str, required=True)
 
     parser.add_argument("--board_height", type=int, required=True)
     parser.add_argument("--board_width", type=int, required=True)
@@ -30,8 +30,8 @@ def main():
     args = parser.parse_args()
 
     # Save arguments
-    os.makedirs(args.log_dir, exist_ok=True)
-    with open(os.path.join(args.log_dir, "args.txt"), "w") as f:
+    os.makedirs(args.project_dir, exist_ok=True)
+    with open(os.path.join(args.project_dir, "args.txt"), "w") as f:
         f.write(pformat(vars(args)))
 
     # Prepare game environment
@@ -59,7 +59,7 @@ def main():
         env=env,
         model_param=model_param,
         train_param=train_param,
-        log_dir=args.log_dir,
+        project_dir=args.project_dir,
     )
 
     # Train

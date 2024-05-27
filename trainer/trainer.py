@@ -26,7 +26,7 @@ class MineSweeperTrainer:
         env: MineSweeperEnv,
         model_param: ModelParameter,
         train_param: TrainParameter,
-        log_dir: Optional[str] = None,
+        project_dir: Optional[str] = None,
     ):
         self.env = env
 
@@ -49,7 +49,7 @@ class MineSweeperTrainer:
         )
         self.q_tracker.collect_samples(size=self.train_param.q_sample_size)
 
-        self.log_dir = log_dir
+        self.project_dir = project_dir
 
     def train(self, n_episodes: int, output_file: Optional[str] = None) -> None:
 
@@ -60,8 +60,8 @@ class MineSweeperTrainer:
                 tqdm.write(content)
                 return
 
-            if self.log_dir is not None:
-                path = os.path.join(self.log_dir, output_file)
+            if self.project_dir is not None:
+                path = os.path.join(self.project_dir, output_file)
             else:
                 path = output_file
             with open(path, "a") as f:
@@ -215,12 +215,17 @@ class MineSweeperTrainer:
         raise NotImplementedError
 
     def save_models(self) -> None:
-        raise NotImplementedError
+        if self.project_dir is not None:
+            path_format = os.path.join(self.project_dir, "{}.pt")
+        else:
+            path_format = "{}.pt"
+        self.policy_net.save_state(path_format.format("policy"))
+        self.target_net.save_state(path_format.format("target"))
 
     def plot_logs(self) -> None:
-        if self.log_dir is None:
-            raise ValueError("log_dir is not set")
-        self.logs.plot(self.log_dir)
+        if self.project_dir is None:
+            raise ValueError("project_dir is not set")
+        self.logs.plot(self.project_dir)
 
     def visualize_q_values(
         self,
@@ -251,8 +256,8 @@ class TrainLog:
         self.win.clear()
         self.eps.clear()
 
-    def plot(self, log_dir: str) -> None:
-        os.makedirs(log_dir, exist_ok=True)
+    def plot(self, directory: str) -> None:
+        os.makedirs(directory, exist_ok=True)
 
         name_map = {
             "loss": self.loss,
@@ -265,11 +270,11 @@ class TrainLog:
         for name, log in name_map.items():
             plt.title(name.upper())
             plt.plot(log)
-            plt.savefig(f"{log_dir}/{name}.jpg")
+            plt.savefig(f"{directory}/{name}.jpg")
             plt.clf()
 
         # Game result
         plt.title("RESULT")
         plt.plot(self.win, "r.")
-        plt.savefig(f"{log_dir}/result.jpg")
+        plt.savefig(f"{directory}/result.jpg")
         plt.clf()
