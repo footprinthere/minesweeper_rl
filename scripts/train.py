@@ -73,8 +73,12 @@ def main():
         output_file = os.path.join(args.project_dir, args.log_file)
     trainer.train(n_episodes=args.n_episodes, output_file=output_file)
 
+    # Save model states
+    print("Training completed. Saving model states...")
+    trainer.save_models()
+
     # Plot results
-    print("Training completed. Plotting results...")
+    print("Plotting results...")
     trainer.plot_logs()
 
 
