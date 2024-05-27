@@ -10,3 +10,4 @@ __pycache__
 # Training results
 *.jpg
 *.txt
+*.pt
