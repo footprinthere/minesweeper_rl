@@ -292,7 +292,7 @@ class TrainLog:
             plt.clf()
 
         # Game result
-        plt.title("RESULT")
+        plt.title(f"RESULT ({self.win.count(True)}/{len(self.win)})")
         plt.plot(self.win, "r.")
         plt.savefig(f"{directory}/result.jpg")
         plt.clf()
