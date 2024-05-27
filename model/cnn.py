@@ -1,3 +1,4 @@
+import torch
 from torch import nn, Tensor
 import torch.nn.functional as F
 
@@ -52,3 +53,11 @@ class MineSweeperCNN(nn.Module):
             x = F.relu(layer(x))
         x = self._output(x)  # (N, H*W)
         return x
+
+    def save_state(self, path: str) -> None:
+        if not path.endswith(".pt"):
+            raise ValueError("Model path must end with '.pt'")
+        torch.save(self.state_dict(), path)
+
+    def load_state(self, path: str) -> None:
+        self.load_state_dict(torch.load(path))
