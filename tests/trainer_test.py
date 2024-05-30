@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 from trainer import MineSweeperTrainer, TrainParameter
 from game import MineSweeperEnv
-from model.parameter import ModelParameter
+from model import ModelParameter
 
 
 class TrainerTest(unittest.TestCase):

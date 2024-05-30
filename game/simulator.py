@@ -1,6 +1,6 @@
 from typing import Optional
 
-from .env import MineSweeperEnv
+from game.env import MineSweeperEnv
 
 
 class MineSweeperSimulator:

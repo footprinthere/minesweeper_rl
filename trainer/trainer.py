@@ -10,12 +10,11 @@ from torch import Tensor
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
+from game import MineSweeperEnv, OpenResult
 from model import MineSweeperCNN, ModelParameter
-from game.env import MineSweeperEnv
-from game.open_result import OpenResult
-from .memory import ReplayMemory, Transition
-from .q_tracker import MaxQValTracker
-from .parameter import TrainParameter
+from trainer.memory import ReplayMemory, Transition
+from trainer.q_tracker import MaxQValTracker
+from trainer.parameter import TrainParameter
 from tools.visualize import visualize_2d_tensor
 
 

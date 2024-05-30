@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .open_result import OpenResult
+from game.open_result import OpenResult
 
 
 @dataclass

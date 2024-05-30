@@ -4,9 +4,9 @@ import random
 import torch
 from torch import Tensor
 
-from .board import MineSweeperBoard
-from .open_result import OpenResult
-from .env_step_result import EnvStepResult
+from game.board import MineSweeperBoard
+from game.open_result import OpenResult
+from game.env_step_result import EnvStepResult
 
 
 class MineSweeperEnv:

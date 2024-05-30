@@ -3,7 +3,7 @@ from typing import Optional
 import random
 from collections import deque
 
-from .open_result import OpenResult
+from game.open_result import OpenResult
 
 
 class MineSweeperBoard:

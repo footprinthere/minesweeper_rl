@@ -2,7 +2,7 @@ import torch
 from torch import nn, Tensor
 import torch.nn.functional as F
 
-from .parameter import ModelParameter
+from model.parameter import ModelParameter
 
 
 class MineSweeperCNN(nn.Module):

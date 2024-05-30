@@ -1,8 +1,7 @@
 import unittest
 
-from game import MineSweeperEnv
+from game import MineSweeperEnv, OpenResult
 from game.board import MineSweeperBoard
-from game.open_result import OpenResult
 
 
 class EnvTest(unittest.TestCase):
