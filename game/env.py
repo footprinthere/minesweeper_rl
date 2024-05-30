@@ -71,6 +71,9 @@ class MineSweeperEnv:
     def get_state(self) -> Optional[Tensor]:
         return self._curr_state
 
+    def is_terminated(self) -> bool:
+        return self._curr_state is None
+
     def get_board(self) -> list[list[int]]:
         return self._board.visible_board
 

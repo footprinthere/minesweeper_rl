@@ -87,7 +87,7 @@ class MineSweeperTrainer:
 
                 _write(self.env.render())
 
-                if self.env.get_state() is None:
+                if self.env.is_terminated():
                     break  # episode terminated
 
             # Save metrics
