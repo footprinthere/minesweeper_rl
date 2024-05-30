@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import MagicMock
 
+import torch
+
 from trainer import MineSweeperTrainer, TrainParameter
 from game import MineSweeperEnv
 from model import ModelParameter
@@ -16,10 +18,14 @@ class TrainerTest(unittest.TestCase):
             board_size=9 * 10, n_channels=2, cnn_depth=2, ff_dim=32
         )
         self.train_param = TrainParameter(batch_size=8)
+        self.device = torch.device("cpu")
 
     def test_select_action(self):
         trainer = MineSweeperTrainer(
-            env=self.env, model_param=self.model_param, train_param=self.train_param
+            env=self.env,
+            model_param=self.model_param,
+            train_param=self.train_param,
+            device=self.device,
         )
 
         for _ in range(100):
@@ -29,7 +35,10 @@ class TrainerTest(unittest.TestCase):
     def test_select_action_explore(self):
         self.train_param.eps_range = (1.0, 1.0)
         trainer = MineSweeperTrainer(
-            env=self.env, model_param=self.model_param, train_param=self.train_param
+            env=self.env,
+            model_param=self.model_param,
+            train_param=self.train_param,
+            device=self.device,
         )
         self.env.sample_action = MagicMock()
 
@@ -39,7 +48,10 @@ class TrainerTest(unittest.TestCase):
     def test_select_action_exploit(self):
         self.train_param.eps_range = (0.0, 0.0)
         trainer = MineSweeperTrainer(
-            env=self.env, model_param=self.model_param, train_param=self.train_param
+            env=self.env,
+            model_param=self.model_param,
+            train_param=self.train_param,
+            device=self.device,
         )
         self.env.sample_action = MagicMock()
 
@@ -48,7 +60,10 @@ class TrainerTest(unittest.TestCase):
 
     def test_train(self):
         trainer = MineSweeperTrainer(
-            env=self.env, model_param=self.model_param, train_param=self.train_param
+            env=self.env,
+            model_param=self.model_param,
+            train_param=self.train_param,
+            device=self.device,
         )
         trainer.train(n_episodes=2)
 
