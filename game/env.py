@@ -89,6 +89,10 @@ class MineSweeperEnv:
 
         return str(self._board)
 
+    @property
+    def CLOSED_CELL(self) -> int:
+        return self._board.CLOSED
+
     @staticmethod
     def _board_to_tensor(board: list[list[int]]) -> Tensor:
         # [1, H, W]
