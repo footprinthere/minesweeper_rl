@@ -207,20 +207,6 @@ class MineSweeperTrainer:
 
         return output
 
-    def predict(self):
-        self.env.reset()
-
-        for t in count():
-            self._predict_step()
-            print(self.env.render())
-            if self.env.get_state() is None:
-                break
-
-        raise NotImplementedError
-
-    def _predict_step(self):
-        raise NotImplementedError
-
     def save_models(self) -> None:
         if self.project_dir is not None:
             path_format = os.path.join(self.project_dir, "{}.pt")
