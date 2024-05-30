@@ -30,7 +30,7 @@ class MineSweeperPlayer:
         self.policy_net.eval().to(self.device)
         self.target_net.eval().to(self.device)
 
-        self.rewards: list[float] = []
+        self._rewards: list[float] = []
 
     def load_models(self, directory: str) -> None:
         path_format = os.path.join(directory, "{}.pt")
@@ -50,6 +50,7 @@ class MineSweeperPlayer:
                 f.write(content + "\n")
 
         self.env.reset()
+        self.clear_logs()
 
         while True:
             self._step()
@@ -65,7 +66,7 @@ class MineSweeperPlayer:
         action = self._select_action(use_mask=True)
 
         env_step_result = self.env.step(action)
-        self.rewards.append(env_step_result.reward)
+        self._rewards.append(env_step_result.reward)
 
     def _select_action(self, use_mask: bool) -> int:
         output = self._compute_q(use_mask=use_mask)
@@ -86,7 +87,10 @@ class MineSweeperPlayer:
 
         return output
 
+    def clear_logs(self) -> None:
+        self._rewards.clear()
+
     def plot_logs(self) -> None:
         plt.title("REWARD")
-        plt.plot(self.rewards)
+        plt.plot(self._rewards)
         plt.show()
