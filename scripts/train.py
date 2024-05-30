@@ -27,6 +27,11 @@ def main():
     parser.add_argument("--q_sample_size", type=int, required=True)
     parser.add_argument("--use_action_mask", action="store_true")
 
+    parser.add_argument("--gamma", type=float, default=0.9)
+    parser.add_argument("--eps_range", type=float, nargs=2, default=[0.9, 0.005])
+    parser.add_argument("--eps_decay", type=int, default=1000)
+    parser.add_argument("--lr", type=float, default=0.005)
+
     parser.add_argument("--n_episodes", type=int, required=True)
 
     args = parser.parse_args()
@@ -55,6 +60,10 @@ def main():
     train_param = TrainParameter(
         batch_size=args.batch_size,
         q_sample_size=args.q_sample_size,
+        gamma=args.gamma,
+        eps_range=args.eps_range,
+        eps_decay=args.eps_decay,
+        lr=args.lr,
         use_action_mask=args.use_action_mask,
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
