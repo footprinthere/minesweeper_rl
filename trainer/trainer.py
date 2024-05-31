@@ -56,52 +56,23 @@ class MineSweeperTrainer:
         self.policy_net.to(self.device)
         self.target_net.to(self.device)
 
-    def train(self, n_episodes: int, output_file: Optional[str] = None) -> None:
-
-        def _write(content: str):
-            if output_file is None:
-                return
-            if output_file == "stdin":
-                tqdm.write(content)
-                return
-
-            if self.project_dir is not None:
-                path = os.path.join(self.project_dir, output_file)
-            else:
-                path = output_file
-            with open(path, "a") as f:
-                f.write(content + "\n")
-
+    def train(self, n_episodes: int) -> None:
         self.logs.clear()
 
         for i in tqdm(range(n_episodes)):
             # Reset environment
             self.env.reset()
 
-            episode_loss = 0.0
             for t in count():
-                loss, win = self._step()
-                if loss is not None:
-                    episode_loss += loss
-
-                _write(self.env.render())
-
+                win = self._step()
                 if self.env.is_terminated():
                     break  # episode terminated
 
             # Save metrics
-            episode_loss /= t + 1
-            self.logs.loss.append(episode_loss)
-            self.logs.duration.append(t + 1)
-            self.logs.win.append(win)
+            max_q, _ = self.q_tracker.get_max_q()
+            self.logs.episode(i, duration=t + 1, max_q=max_q, win=win)
 
-            max_q, max_q_softmax = self.q_tracker.get_max_q()
-            self.logs.max_q.append(max_q)
-            self.logs.max_q_softmax.append(max_q_softmax)
-
-            _write(f"Episode {i} - loss {episode_loss :.4f}, duration {t + 1}")
-
-    def _step(self) -> tuple[Optional[float], bool]:
+    def _step(self) -> bool:
         prev_state = self.env.get_state()
         assert prev_state is not None
         action = self._select_action(use_mask=self.train_param.use_action_mask)
@@ -131,9 +102,12 @@ class MineSweeperTrainer:
             )
 
         self.steps_done += 1
+        self.logs.step_reward(env_step_result.reward)
+        if loss is not None:
+            self.logs.step_loss(loss)
 
         win = env_step_result.open_result == OpenResult.WIN
-        return loss, win
+        return win
 
     def _optimize(self) -> Optional[float]:
         if self.memory.size < self.train_param.batch_size:
@@ -182,7 +156,7 @@ class MineSweeperTrainer:
         eps = eps_end + (eps_start - eps_end) * math.exp(
             -1.0 * self.steps_done / self.train_param.eps_decay
         )
-        self.logs.eps.append(eps)
+        self.logs.step_eps(eps)
         if p < eps:
             # Explore
             return self.env.sample_action(exclude_opened=use_mask)
@@ -225,10 +199,11 @@ class MineSweeperTrainer:
         self.policy_net.load_state(path_format.format("policy"))
         self.target_net.load_state(path_format.format("target"))
 
-    def plot_logs(self) -> None:
+    def plot_logs(self, average_episodes: int) -> None:
         if self.project_dir is None:
             raise ValueError("project_dir is not set")
-        self.logs.plot(self.project_dir)
+        averaged = self.logs.average_every_n_episodes(n=average_episodes)
+        averaged.plot(self.project_dir)
 
     def visualize_q_values(
         self,
@@ -243,30 +218,72 @@ class MineSweeperTrainer:
 
 @dataclass
 class TrainLog:
-    loss: list[float] = field(default_factory=list)
     duration: list[int] = field(default_factory=list)
     max_q: list[float] = field(default_factory=list)
-    max_q_softmax: list[float] = field(default_factory=list)
     win: list[bool] = field(default_factory=list)
+
+    loss: list[float] = field(default_factory=list)
+    reward: list[float] = field(default_factory=list)
+    _step_loss: list[float] = field(default_factory=list)
+    _step_reward: list[float] = field(default_factory=list)
 
     eps: list[float] = field(default_factory=list)
 
     def clear(self):
-        self.loss.clear()
         self.duration.clear()
         self.max_q.clear()
-        self.max_q_softmax.clear()
         self.win.clear()
+        self.loss.clear()
+        self.reward.clear()
+        self._step_loss.clear()
+        self._step_reward.clear()
         self.eps.clear()
+
+    def episode(self, episode_idx: int, duration: int, max_q: float, win: bool) -> None:
+        self.duration.append(duration)
+        self.max_q.append(max_q)
+        self.win.append(win)
+
+        self.loss.append(sum(self._step_loss) / duration)
+        self.reward.append(avg_reward := sum(self._step_reward) / duration)
+        self._step_loss.clear()
+        self._step_reward.clear()
+
+        if (episode_idx + 1) % 100 == 0:
+            tqdm.write(
+                f"Episode {episode_idx+1} : duration {duration}, reward {avg_reward}, max_q {max_q}, win {win}"
+            )
+
+    def step_loss(self, loss: float) -> None:
+        self._step_loss.append(loss)
+
+    def step_reward(self, reward: float) -> None:
+        self._step_reward.append(reward)
+
+    def step_eps(self, eps: float) -> None:
+        self.eps.append(eps)
+
+    def average_every_n_episodes(self, n: int) -> "TrainLog":
+        def average(arr: list[float]) -> list[float]:
+            return [sum(arr[i : i + n]) / n for i in range(0, len(arr), n)]
+
+        return TrainLog(
+            duration=[e for e in self.duration],
+            max_q=average(self.max_q),
+            win=[e for e in self.win],
+            loss=average(self.loss),
+            reward=average(self.reward),
+            eps=average(self.eps),
+        )
 
     def plot(self, directory: str) -> None:
         os.makedirs(directory, exist_ok=True)
 
         name_map = {
-            "loss": self.loss,
             "duration": self.duration,
             "max_q": self.max_q,
-            "max_q_softmax": self.max_q_softmax,
+            "loss": self.loss,
+            "reward": self.reward,
             "eps": self.eps,
         }
 
@@ -277,7 +294,7 @@ class TrainLog:
             plt.clf()
 
         # Game result
-        plt.title(f"RESULT ({self.win.count(True)}/{len(self.win)})")
+        plt.title(f"WIN ({self.win.count(True)}/{len(self.win)})")
         plt.plot(self.win, "r.")
-        plt.savefig(f"{directory}/result.jpg")
+        plt.savefig(f"{directory}/win.jpg")
         plt.clf()

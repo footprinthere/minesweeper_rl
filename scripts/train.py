@@ -77,14 +77,7 @@ def main():
     print(f"Using device: {device}")
 
     # Train
-    print("Start training...")
-    if args.log_file is None:
-        output_file = None
-    elif args.log_file == "stdin":
-        output_file = "stdin"
-    else:
-        output_file = os.path.join(args.project_dir, args.log_file)
-    trainer.train(n_episodes=args.n_episodes, output_file=output_file)
+    trainer.train(n_episodes=args.n_episodes)
 
     # Save model states
     print("Training completed. Saving model states...")
@@ -92,7 +85,7 @@ def main():
 
     # Plot results
     print("Plotting results...")
-    trainer.plot_logs()
+    trainer.plot_logs(average_episodes=args.n_episodes // 1000)
 
 
 if __name__ == "__main__":
