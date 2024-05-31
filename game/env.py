@@ -81,7 +81,7 @@ class MineSweeperEnv:
         return self._board.open_state
 
     def get_open_mask(self) -> Tensor:
-        # [H * W]
+        """Returns a bool tensor of size (H*W,), where True indicates a opened cell."""
         return torch.tensor(self._board.open_state, dtype=torch.bool).flatten()
 
     def render(self) -> str:
