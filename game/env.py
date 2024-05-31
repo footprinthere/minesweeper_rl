@@ -12,8 +12,8 @@ from game.env_step_result import EnvStepResult
 class MineSweeperEnv:
 
     _reward_map = {
-        OpenResult.FAIL: -1,
-        OpenResult.WIN: 1,
+        OpenResult.FAIL: -1.0,
+        OpenResult.WIN: 1.0,
         OpenResult.ADJACENT: 0.3,
         OpenResult.ISOLATED: -0.3,
         OpenResult.DUPLICATED: -0.3,
